@@ -1,5 +1,6 @@
 use byteorder::{LittleEndian, ByteOrder, BigEndian};
-use std::io::Cursor;
+//use std::io::prelude::*;
+use std::io::{Cursor, Read};
 
 const T: [u32; 64] = [
     0xd76aa478, 0xe8c7b756, 0x242070db, 0xc1bdceee, 0xf57c0faf, 0x4787c62a, 0xa8304613, 0xfd469501,
@@ -55,9 +56,12 @@ fn main() {
     let mut c = 0x98badcfeu32;
     let mut d = 0x10325476u32;
 
-    for t in 0..n {
+    let mut cursor = Cursor::new(m);
+    for _ in 0..n {
         let mut x = [0u32;16];
-        LittleEndian::read_u32_into(&m[t*64..t*64+64], &mut x);
+        let mut block = [0;64];
+        cursor.read_exact(&mut block).unwrap();
+        LittleEndian::read_u32_into(&block, &mut x);
         let aa = a;
         let bb = b;
         let cc = c;
