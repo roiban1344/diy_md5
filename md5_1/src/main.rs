@@ -19,11 +19,11 @@ const PADDING: [u8; 64] = [
 ];
 
 fn f(x: u32, y: u32, z: u32) -> u32 {
-    (x & y) | ((!x) & z)
+    x & y | !x & z
 }
 
 fn g(x: u32, y: u32, z: u32) -> u32 {
-    (x & z) | (y & (!z))
+    x & z | y & !z
 }
 
 fn h(x: u32, y: u32, z: u32) -> u32 {
@@ -34,20 +34,19 @@ fn i(x: u32, y: u32, z: u32) -> u32 {
     y ^ (x | !z)
 }
 
-fn main() {
-    let message = String::from("");
+fn md5(message: &str) -> u128 {
+    let message = String::from(message);
     let mut bytes = message.as_bytes().to_vec();
-    let len = bytes.len();
-    let padding_len = if len % 64 >= 56 {
-        120 - len % 64
+    let message_len_in_bytes = bytes.len();
+    let padding_len_in_bytes = if message_len_in_bytes % 64 >= 56 {
+        120 - message_len_in_bytes % 64
     } else {
-        56 - len % 64
+        56 - message_len_in_bytes % 64
     };
-    bytes.extend_from_slice(&PADDING[..padding_len]);
-    let mut buf: [u8; 8] = [0, 0, 0, 0, 0, 0, 0, 0];
-    LittleEndian::write_u64(&mut buf, 8 * len as u64);
+    bytes.extend_from_slice(&PADDING[..padding_len_in_bytes]);
+    let mut buf = [0; 8];
+    LittleEndian::write_u64(&mut buf, 8 * message_len_in_bytes as u64);
     bytes.extend_from_slice(&buf);
-    println!("{} {} {}", len, padding_len, bytes.len());
 
     let mut a = 0x67452301u32;
     let mut b = 0xefcdab89u32;
@@ -66,7 +65,7 @@ fn main() {
         let cc = c;
         let dd = d;
 
-        macro_rules! op {
+        macro_rules! define_operation {
             ($macro_name:ident, $f:ident) => {
                 macro_rules! $macro_name {
                     ($a:expr, $b:expr, $c:expr, $d:expr, $k:expr, $s:expr, $i:expr) => {
@@ -80,7 +79,7 @@ fn main() {
                 }
             };
         }
-        op!(ff, f);
+        define_operation!(ff, f);
         ff![a, b, c, d, 0, 7, 1];
         ff![d, a, b, c, 1, 12, 2];
         ff![c, d, a, b, 2, 17, 3];
@@ -97,7 +96,7 @@ fn main() {
         ff![d, a, b, c, 13, 12, 14];
         ff![c, d, a, b, 14, 17, 15];
         ff![b, c, d, a, 15, 22, 16];
-        op!(gg, g);
+        define_operation!(gg, g);
         gg![a, b, c, d, 1, 5, 17];
         gg![d, a, b, c, 6, 9, 18];
         gg![c, d, a, b, 11, 14, 19];
@@ -114,7 +113,7 @@ fn main() {
         gg![d, a, b, c, 2, 9, 30];
         gg![c, d, a, b, 7, 14, 31];
         gg![b, c, d, a, 12, 20, 32];
-        op!(hh, h);
+        define_operation!(hh, h);
         hh![a, b, c, d, 5, 4, 33];
         hh![d, a, b, c, 8, 11, 34];
         hh![c, d, a, b, 11, 16, 35];
@@ -131,7 +130,7 @@ fn main() {
         hh![d, a, b, c, 12, 11, 46];
         hh![c, d, a, b, 15, 16, 47];
         hh![b, c, d, a, 2, 23, 48];
-        op!(ii, i);
+        define_operation!(ii, i);
         ii![a, b, c, d, 0, 6, 49];
         ii![d, a, b, c, 7, 10, 50];
         ii![c, d, a, b, 14, 15, 51];
@@ -159,6 +158,11 @@ fn main() {
     LittleEndian::write_u32(&mut buf[4..8], b);
     LittleEndian::write_u32(&mut buf[8..12], c);
     LittleEndian::write_u32(&mut buf[12..16], d);
-    let md = BigEndian::read_u128(&buf);
-    println!("{:032x}", md);
+    BigEndian::read_u128(&buf)
+}
+
+fn main(){
+    let message = "Rust";
+    let md = md5(message);
+    println!("{:x}", md);
 }
