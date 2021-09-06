@@ -66,14 +66,21 @@ fn main() {
         let cc = c;
         let dd = d;
 
-        macro_rules! ff {
-            ($a:expr, $b:expr, $c:expr, $d:expr, $k:expr, $s:expr, $i:expr) => {
-                $a = $b.wrapping_add(
-                    $a.wrapping_add(f($b, $c, $d).wrapping_add(x[$k]).wrapping_add(T[$i - 1]))
-                        .rotate_left($s),
-                );
+        macro_rules! op {
+            ($macro_name:ident, $f:ident) => {
+                macro_rules! $macro_name {
+                    ($a:expr, $b:expr, $c:expr, $d:expr, $k:expr, $s:expr, $i:expr) => {
+                        $a = $b.wrapping_add(
+                            $a.wrapping_add(
+                                $f($b, $c, $d).wrapping_add(x[$k]).wrapping_add(T[$i - 1]),
+                            )
+                            .rotate_left($s),
+                        );
+                    };
+                }
             };
         }
+        op!(ff, f);
         ff![a, b, c, d, 0, 7, 1];
         ff![d, a, b, c, 1, 12, 2];
         ff![c, d, a, b, 2, 17, 3];
@@ -90,14 +97,7 @@ fn main() {
         ff![d, a, b, c, 13, 12, 14];
         ff![c, d, a, b, 14, 17, 15];
         ff![b, c, d, a, 15, 22, 16];
-        macro_rules! gg {
-            ($a:expr, $b:expr, $c:expr, $d:expr, $k:expr, $s:expr, $i:expr) => {
-                $a = $b.wrapping_add(
-                    $a.wrapping_add(g($b, $c, $d).wrapping_add(x[$k]).wrapping_add(T[$i - 1]))
-                        .rotate_left($s),
-                );
-            };
-        }
+        op!(gg, g);
         gg![a, b, c, d, 1, 5, 17];
         gg![d, a, b, c, 6, 9, 18];
         gg![c, d, a, b, 11, 14, 19];
@@ -114,14 +114,7 @@ fn main() {
         gg![d, a, b, c, 2, 9, 30];
         gg![c, d, a, b, 7, 14, 31];
         gg![b, c, d, a, 12, 20, 32];
-        macro_rules! hh {
-            ($a:expr, $b:expr, $c:expr, $d:expr, $k:expr, $s:expr, $i:expr) => {
-                $a = $b.wrapping_add(
-                    $a.wrapping_add(h($b, $c, $d).wrapping_add(x[$k]).wrapping_add(T[$i - 1]))
-                        .rotate_left($s),
-                );
-            };
-        }
+        op!(hh, h);
         hh![a, b, c, d, 5, 4, 33];
         hh![d, a, b, c, 8, 11, 34];
         hh![c, d, a, b, 11, 16, 35];
@@ -138,14 +131,7 @@ fn main() {
         hh![d, a, b, c, 12, 11, 46];
         hh![c, d, a, b, 15, 16, 47];
         hh![b, c, d, a, 2, 23, 48];
-        macro_rules! ii {
-            ($a:expr, $b:expr, $c:expr, $d:expr, $k:expr, $s:expr, $i:expr) => {
-                $a = $b.wrapping_add(
-                    $a.wrapping_add(i($b, $c, $d).wrapping_add(x[$k]).wrapping_add(T[$i - 1]))
-                        .rotate_left($s),
-                );
-            };
-        }
+        op!(ii, i);
         ii![a, b, c, d, 0, 6, 49];
         ii![d, a, b, c, 7, 10, 50];
         ii![c, d, a, b, 14, 15, 51];
