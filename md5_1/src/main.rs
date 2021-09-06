@@ -1,4 +1,4 @@
-use byteorder::{LittleEndian, ByteOrder, BigEndian};
+use byteorder::{BigEndian, ByteOrder, LittleEndian};
 //use std::io::prelude::*;
 use std::io::{Cursor, Read};
 
@@ -19,7 +19,7 @@ const PADDING: [u8; 64] = [
     0, 0, 0,
 ];
 
-fn f(x: u32, y: u32, z: u32)->u32 {
+fn f(x: u32, y: u32, z: u32) -> u32 {
     (x & y) | ((!x) & z)
 }
 
@@ -36,16 +36,21 @@ fn i(x: u32, y: u32, z: u32) -> u32 {
 }
 
 fn main() {
-    let message = String::from("12345678901234567890123456789012345678901234567890123456789012345678901234567890");
+    let message = String::from(
+        "12345678901234567890123456789012345678901234567890123456789012345678901234567890",
+    );
     let mut bytes = message.as_bytes().to_vec();
     let len = bytes.len();
-    let padding_len = if len % 64 >= 56 {120- len % 64} else {56 - len % 64};
+    let padding_len = if len % 64 >= 56 {
+        120 - len % 64
+    } else {
+        56 - len % 64
+    };
     bytes.extend_from_slice(&PADDING[..padding_len]);
-    let mut buf:[u8;8]=[0,0,0,0,0,0,0,0];
+    let mut buf: [u8; 8] = [0, 0, 0, 0, 0, 0, 0, 0];
     LittleEndian::write_u64(&mut buf, 8 * len as u64);
     bytes.extend_from_slice(&buf);
-    println!("{} {} {}", len,padding_len,bytes.len());
-
+    println!("{} {} {}", len, padding_len, bytes.len());
 
     let m = bytes;
     let n = m.len() / 64;
@@ -58,8 +63,8 @@ fn main() {
 
     let mut cursor = Cursor::new(m);
     for _ in 0..n {
-        let mut x = [0u32;16];
-        let mut block = [0;64];
+        let mut x = [0u32; 16];
+        let mut block = [0; 64];
         cursor.read_exact(&mut block).unwrap();
         LittleEndian::read_u32_into(&block, &mut x);
         let aa = a;
@@ -68,9 +73,11 @@ fn main() {
         let dd = d;
 
         let op = |a: &mut u32, &b: &u32, &c: &u32, &d: &u32, k: usize, s: u32, i: usize| {
-            *a = b.wrapping_add(a.wrapping_add(f(b, c, d).wrapping_add(x[k]).wrapping_add(T[i - 1])).rotate_left(s));
+            *a = b.wrapping_add(
+                a.wrapping_add(f(b, c, d).wrapping_add(x[k]).wrapping_add(T[i - 1]))
+                    .rotate_left(s),
+            );
         };
-    
         op(&mut a, &b, &c, &d, 0, 7, 1);
         op(&mut d, &a, &b, &c, 1, 12, 2);
         op(&mut c, &d, &a, &b, 2, 17, 3);
@@ -87,11 +94,12 @@ fn main() {
         op(&mut d, &a, &b, &c, 13, 12, 14);
         op(&mut c, &d, &a, &b, 14, 17, 15);
         op(&mut b, &c, &d, &a, 15, 22, 16);
-    
         let op = |a: &mut u32, &b: &u32, &c: &u32, &d: &u32, k: usize, s: u32, i: usize| {
-            *a = b.wrapping_add(a.wrapping_add(g(b, c, d).wrapping_add(x[k]).wrapping_add(T[i - 1])).rotate_left(s));
+            *a = b.wrapping_add(
+                a.wrapping_add(g(b, c, d).wrapping_add(x[k]).wrapping_add(T[i - 1]))
+                    .rotate_left(s),
+            );
         };
-    
         op(&mut a, &b, &c, &d, 1, 5, 17);
         op(&mut d, &a, &b, &c, 6, 9, 18);
         op(&mut c, &d, &a, &b, 11, 14, 19);
@@ -108,9 +116,11 @@ fn main() {
         op(&mut d, &a, &b, &c, 2, 9, 30);
         op(&mut c, &d, &a, &b, 7, 14, 31);
         op(&mut b, &c, &d, &a, 12, 20, 32);
-    
         let op = |a: &mut u32, &b: &u32, &c: &u32, &d: &u32, k: usize, s: u32, i: usize| {
-            *a = b.wrapping_add(a.wrapping_add(h(b, c, d).wrapping_add(x[k]).wrapping_add(T[i - 1])).rotate_left(s));
+            *a = b.wrapping_add(
+                a.wrapping_add(h(b, c, d).wrapping_add(x[k]).wrapping_add(T[i - 1]))
+                    .rotate_left(s),
+            );
         };
         op(&mut a, &b, &c, &d, 5, 4, 33);
         op(&mut d, &a, &b, &c, 8, 11, 34);
@@ -128,9 +138,11 @@ fn main() {
         op(&mut d, &a, &b, &c, 12, 11, 46);
         op(&mut c, &d, &a, &b, 15, 16, 47);
         op(&mut b, &c, &d, &a, 2, 23, 48);
-    
         let op = |a: &mut u32, &b: &u32, &c: &u32, &d: &u32, k: usize, s: u32, j: usize| {
-            *a = b.wrapping_add(a.wrapping_add(i(b, c, d).wrapping_add(x[k]).wrapping_add(T[j - 1])).rotate_left(s));
+            *a = b.wrapping_add(
+                a.wrapping_add(i(b, c, d).wrapping_add(x[k]).wrapping_add(T[j - 1]))
+                    .rotate_left(s),
+            );
         };
         op(&mut a, &b, &c, &d, 0, 6, 49);
         op(&mut d, &a, &b, &c, 7, 10, 50);
@@ -148,14 +160,13 @@ fn main() {
         op(&mut d, &a, &b, &c, 11, 10, 62);
         op(&mut c, &d, &a, &b, 2, 15, 63);
         op(&mut b, &c, &d, &a, 9, 21, 64);
-    
         a = a.wrapping_add(aa);
         b = b.wrapping_add(bb);
         c = c.wrapping_add(cc);
         d = d.wrapping_add(dd);
     }
 
-    let mut buf = [0u8;16];
+    let mut buf = [0u8; 16];
     LittleEndian::write_u32(&mut buf[0..4], a);
     LittleEndian::write_u32(&mut buf[4..8], b);
     LittleEndian::write_u32(&mut buf[8..12], c);
