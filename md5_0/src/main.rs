@@ -9,6 +9,8 @@ const T: [u32; 64] = [
     0x6fa87e4f, 0xfe2ce6e0, 0xa3014314, 0x4e0811a1, 0xf7537e82, 0xbd3af235, 0x2ad7d2bb, 0xeb86d391,
 ];
 
+type Aux = fn(u32,u32,u32)->u32;
+
 fn f(x: u32, y: u32, z: u32)->u32 {
     (x & y) | ((!x) & z)
 }
@@ -41,7 +43,7 @@ fn main() {
     println!("{:?}", x);
 
     let op = |a: &mut u32, &b: &u32, &c: &u32, &d: &u32, k: usize, s: u32, i: usize| {
-        *a = b + (*a + f(b, c, d) + x[k] + T[i - 1]).rotate_left(s);
+        *a = b.wrapping_add(a.wrapping_add(f(b, c, d).wrapping_add(x[k]).wrapping_add(T[i - 1])).rotate_left(s));
     };
 
     op(&mut a, &b, &c, &d, 0, 7, 1);
@@ -62,8 +64,9 @@ fn main() {
     op(&mut b, &c, &d, &a, 15, 22, 16);
 
     let op = |a: &mut u32, &b: &u32, &c: &u32, &d: &u32, k: usize, s: u32, i: usize| {
-        *a = b + (*a + g(b, c, d) + x[k] + T[i - 1]).rotate_left(s);
+        *a = b.wrapping_add(a.wrapping_add(g(b, c, d).wrapping_add(x[k]).wrapping_add(T[i - 1])).rotate_left(s));
     };
+
     op(&mut a, &b, &c, &d, 1, 5, 17);
     op(&mut d, &a, &b, &c, 6, 9, 18);
     op(&mut c, &d, &a, &b, 11, 14, 19);
@@ -82,7 +85,7 @@ fn main() {
     op(&mut b, &c, &d, &a, 12, 20, 32);
 
     let op = |a: &mut u32, &b: &u32, &c: &u32, &d: &u32, k: usize, s: u32, i: usize| {
-        *a = b + (*a + h(b, c, d) + x[k] + T[i - 1]).rotate_left(s);
+        *a = b.wrapping_add(a.wrapping_add(h(b, c, d).wrapping_add(x[k]).wrapping_add(T[i - 1])).rotate_left(s));
     };
     op(&mut a, &b, &c, &d, 5, 4, 33);
     op(&mut d, &a, &b, &c, 8, 11, 34);
@@ -102,7 +105,7 @@ fn main() {
     op(&mut b, &c, &d, &a, 2, 23, 48);
 
     let op = |a: &mut u32, &b: &u32, &c: &u32, &d: &u32, k: usize, s: u32, j: usize| {
-        *a = b + (*a + i(b, c, d) + x[k] + T[j - 1]).rotate_left(s);
+        *a = b.wrapping_add(a.wrapping_add(i(b, c, d).wrapping_add(x[k]).wrapping_add(T[j - 1])).rotate_left(s));
     };
     op(&mut a, &b, &c, &d, 0, 6, 49);
     op(&mut d, &a, &b, &c, 7, 10, 50);
@@ -121,10 +124,10 @@ fn main() {
     op(&mut c, &d, &a, &b, 2, 15, 63);
     op(&mut b, &c, &d, &a, 9, 21, 64);
 
-    a += aa;
-    b += bb;
-    c += cc;
-    d += dd;
+    a = a.wrapping_add(aa);
+    b = b.wrapping_add(bb);
+    c = c.wrapping_add(cc);
+    d = d.wrapping_add(dd);
 
     println!("{:x?}",[a,b,c,d]);
     println!("{:x}", 0xd41d8cd9_8f00b204_e9800998_ecf8427eu128);
