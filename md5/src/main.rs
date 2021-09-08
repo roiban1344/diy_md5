@@ -1,22 +1,29 @@
 use byteorder::{BigEndian, ByteOrder, LittleEndian};
 use std::io::{Cursor, Read};
 
-const T: [u32; 64] = [
-    0xd76aa478, 0xe8c7b756, 0x242070db, 0xc1bdceee, 0xf57c0faf, 0x4787c62a, 0xa8304613, 0xfd469501,
-    0x698098d8, 0x8b44f7af, 0xffff5bb1, 0x895cd7be, 0x6b901122, 0xfd987193, 0xa679438e, 0x49b40821,
-    0xf61e2562, 0xc040b340, 0x265e5a51, 0xe9b6c7aa, 0xd62f105d, 0x2441453, 0xd8a1e681, 0xe7d3fbc8,
-    0x21e1cde6, 0xc33707d6, 0xf4d50d87, 0x455a14ed, 0xa9e3e905, 0xfcefa3f8, 0x676f02d9, 0x8d2a4c8a,
-    0xfffa3942, 0x8771f681, 0x6d9d6122, 0xfde5380c, 0xa4beea44, 0x4bdecfa9, 0xf6bb4b60, 0xbebfbc70,
-    0x289b7ec6, 0xeaa127fa, 0xd4ef3085, 0x4881d05, 0xd9d4d039, 0xe6db99e5, 0x1fa27cf8, 0xc4ac5665,
-    0xf4292244, 0x432aff97, 0xab9423a7, 0xfc93a039, 0x655b59c3, 0x8f0ccc92, 0xffeff47d, 0x85845dd1,
-    0x6fa87e4f, 0xfe2ce6e0, 0xa3014314, 0x4e0811a1, 0xf7537e82, 0xbd3af235, 0x2ad7d2bb, 0xeb86d391,
-];
-
 const PADDING: [u8; 64] = [
     0b10000000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0,
 ];
+
+const T: [u32; 65] = [
+    0, 0xd76aa478, 0xe8c7b756, 0x242070db, 0xc1bdceee, 0xf57c0faf, 0x4787c62a, 0xa8304613,
+    0xfd469501, 0x698098d8, 0x8b44f7af, 0xffff5bb1, 0x895cd7be, 0x6b901122, 0xfd987193, 0xa679438e,
+    0x49b40821, 0xf61e2562, 0xc040b340, 0x265e5a51, 0xe9b6c7aa, 0xd62f105d, 0x2441453, 0xd8a1e681,
+    0xe7d3fbc8, 0x21e1cde6, 0xc33707d6, 0xf4d50d87, 0x455a14ed, 0xa9e3e905, 0xfcefa3f8, 0x676f02d9,
+    0x8d2a4c8a, 0xfffa3942, 0x8771f681, 0x6d9d6122, 0xfde5380c, 0xa4beea44, 0x4bdecfa9, 0xf6bb4b60,
+    0xbebfbc70, 0x289b7ec6, 0xeaa127fa, 0xd4ef3085, 0x4881d05, 0xd9d4d039, 0xe6db99e5, 0x1fa27cf8,
+    0xc4ac5665, 0xf4292244, 0x432aff97, 0xab9423a7, 0xfc93a039, 0x655b59c3, 0x8f0ccc92, 0xffeff47d,
+    0x85845dd1, 0x6fa87e4f, 0xfe2ce6e0, 0xa3014314, 0x4e0811a1, 0xf7537e82, 0xbd3af235, 0x2ad7d2bb,
+    0xeb86d391,
+];
+
+fn main() {
+    let message = "Rust";
+    let hash = md5(message);
+    println!("{:x}", hash);
+}
 
 fn f(x: u32, y: u32, z: u32) -> u32 {
     x & y | !x & z
@@ -35,50 +42,48 @@ fn i(x: u32, y: u32, z: u32) -> u32 {
 }
 
 fn md5(message: &str) -> u128 {
-    let message = String::from(message);
-    let mut bytes = message.as_bytes().to_vec();
-    let message_len_in_bytes = bytes.len();
-    let padding_len_in_bytes = if message_len_in_bytes % 64 >= 56 {
-        120 - message_len_in_bytes % 64
+    let mut message = message.as_bytes().to_vec();
+    let message_len_in_bytes = message.len();
+    let mod_64 = message_len_in_bytes & 0b111111;
+    let padding_len_in_bytes = if mod_64 < 56 {
+        56 - mod_64
     } else {
-        56 - message_len_in_bytes % 64
+        120 - mod_64
     };
-    bytes.extend_from_slice(&PADDING[..padding_len_in_bytes]);
-    let mut buf = [0; 8];
+    message.extend(&PADDING[..padding_len_in_bytes]);
+
+    let mut buf: [u8; 8] = [0; 8];
     LittleEndian::write_u64(&mut buf, 8 * message_len_in_bytes as u64);
-    bytes.extend_from_slice(&buf);
+    message.extend(&buf);
 
     let mut a = 0x67452301u32;
     let mut b = 0xefcdab89u32;
     let mut c = 0x98badcfeu32;
     let mut d = 0x10325476u32;
 
-    let n = bytes.len() / 64;
-    let mut cursor = Cursor::new(bytes);
-    for _ in 0..n {
-        let mut x = [0; 16];
-        let mut block = [0; 64];
-        cursor.read(&mut block).unwrap();
-        LittleEndian::read_u32_into(&block, &mut x);
-        let aa = a;
-        let bb = b;
-        let cc = c;
-        let dd = d;
+    let mut cursor = Cursor::new(&message);
+    let n = message.len() >> 6;
 
+    for _ in 0..n {
+        let mut block: [u8; 64] = [0; 64];
+        cursor.read(&mut block).unwrap();
+        let mut x: [u32; 16] = [0; 16];
+        LittleEndian::read_u32_into(&block, &mut x);
         macro_rules! define_operation {
-            ($macro_name:ident, $f:expr) => {
+            ($macro_name: ident, $func: ident) => {
                 macro_rules! $macro_name {
-                    ($a:expr, $b:expr, $c:expr, $d:expr, $k:expr, $s:expr, $i:expr) => {
+                    ($a:expr, $b:expr, $c:expr, $d: expr, $k:expr, $s:expr, $i:expr) => {
                         $a = $b.wrapping_add(
-                            $a.wrapping_add(
-                                $f($b, $c, $d).wrapping_add(x[$k]).wrapping_add(T[$i - 1]),
-                            )
-                            .rotate_left($s),
-                        );
+                            $a.wrapping_add($func($b, $c, $d))
+                                .wrapping_add(x[$k])
+                                .wrapping_add(T[$i])
+                                .rotate_left($s),
+                        )
                     };
                 }
             };
         }
+        let (aa, bb, cc, dd) = (a, b, c, d);
         define_operation!(ff, f);
         ff![a, b, c, d, 0, 7, 1];
         ff![d, a, b, c, 1, 12, 2];
@@ -153,16 +158,7 @@ fn md5(message: &str) -> u128 {
         d = d.wrapping_add(dd);
     }
 
-    let mut buf = [0u8; 16];
-    LittleEndian::write_u32(&mut buf[0..4], a);
-    LittleEndian::write_u32(&mut buf[4..8], b);
-    LittleEndian::write_u32(&mut buf[8..12], c);
-    LittleEndian::write_u32(&mut buf[12..16], d);
+    let mut buf = [0; 16];
+    LittleEndian::write_u32_into(&[a, b, c, d], &mut buf);
     BigEndian::read_u128(&buf)
-}
-
-fn main() {
-    let message = "r";
-    let md = md5(message);
-    println!("{:x}", md);
 }
