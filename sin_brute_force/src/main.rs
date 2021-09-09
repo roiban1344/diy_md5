@@ -18,7 +18,7 @@ const T: [u32; 65] = [
 
 fn main() {
     let c = BigRational::from_integer(BigInt::new(Sign::Plus, vec![0, 1])); //=4294967296
-    for x in 1..=64 {
+    for x in 0..=64 {
         for i in 0.. {
             let (l, r) = approx_range(x, i);
             if l.signum() != r.signum() {
