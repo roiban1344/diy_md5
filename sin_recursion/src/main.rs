@@ -1,6 +1,7 @@
 use num::integer;
 use std::ops::{Add, Mul, Sub};
 
+//RFC1321記載の値
 const T: [u32; 65] = [
     0, 0xd76aa478, 0xe8c7b756, 0x242070db, 0xc1bdceee, 0xf57c0faf, 0x4787c62a, 0xa8304613,
     0xfd469501, 0x698098d8, 0x8b44f7af, 0xffff5bb1, 0x895cd7be, 0x6b901122, 0xfd987193, 0xa679438e,
@@ -34,7 +35,7 @@ fn main() {
     ]);
 
     let print_data = |i: i32, frac: &Frac| -> () {
-        let t = frac.to_u32();
+        let t = frac.times_4294967296_to_u32();
         assert_eq!(t, T[i as usize]);
         println!("{0} {1:#x} {2}", i, t, frac.num.max - frac.num.min)
     };
@@ -52,6 +53,7 @@ fn main() {
     }
 }
 
+//区間演算に用いる「区間」。
 #[derive(Copy, Clone, Debug)]
 struct Interval {
     min: i128,
@@ -79,6 +81,7 @@ impl Interval {
     }
 }
 
+//和差積の未実装。
 impl Add for Interval {
     type Output = Self;
     fn add(self, rhs: Self) -> Self {
@@ -111,6 +114,7 @@ impl Mul for Interval {
     }
 }
 
+//2^63を分母に持ち、[-2^63,2^63]に含まれる区間を分母に持つ有理数。
 #[derive(Debug, Copy, Clone)]
 struct Frac {
     num: Interval, //denom=2^63
@@ -123,7 +127,9 @@ impl Frac {
         }
         Self { num }
     }
-    fn to_u32(&self) -> u32 {
+
+    //2^32倍の整数部分を返す
+    fn times_4294967296_to_u32(&self) -> u32 {
         let min = integer::div_floor(self.num.min.abs(), 1 << 31);
         let max = integer::div_floor(self.num.max.abs(), 1 << 31);
         if min == max {
@@ -135,6 +141,7 @@ impl Frac {
     }
 }
 
+//和差積のみ実装。
 impl Add for Frac {
     type Output = Self;
     fn add(self, rhs: Self) -> Self {
